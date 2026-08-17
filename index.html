@@ -474,7 +474,7 @@ function pintar(){
       ${p.o ? `<span class="tarja orig">Original</span>` : (p.d ? `<span class="tarja">Destaque</span>` : "")}
       <div class="foto">
         <img src="imagens/${p.img}" alt="${p.n} ${p.v}" loading="lazy"
-             onerror="this.onerror=null;this.src=semFoto('${p.v}', '${p.a}')">
+             data-titulo="${p.v}" data-sub="${p.a}">
       </div>
       <div class="marca">${p.m} · ${p.v}</div>
       <h4>${p.n}</h4>
@@ -488,6 +488,17 @@ function pintar(){
     </article>`).join("")
     : `<p class="vazio">Não achamos essa peça no site.<br>
        <a href="https://wa.me/5511989886683" style="color:var(--verde);font-weight:700">Chama no WhatsApp que a gente cota pra você »</a></p>`;
+
+  document.querySelectorAll(".card .foto img").forEach(protegerFoto);
+}
+
+/* Troca a imagem pelo placeholder da marca quando o arquivo não existe.
+   Listener em JS (e não onerror no HTML) porque o handler inline não
+   sobrevive à inserção via innerHTML em todos os navegadores. */
+function protegerFoto(img){
+  const cair = () => { img.src = semFoto(img.dataset.titulo || img.alt, img.dataset.sub || ""); };
+  img.addEventListener("error", cair, {once:true});
+  if (img.complete && img.naturalWidth === 0) cair();
 }
 
 function cat(c){ estado.cat = c; estado.texto = ""; document.getElementById("txtBusca").value = "";
@@ -504,12 +515,8 @@ function irCatalogo(){ document.getElementById("catalogo").scrollIntoView({behav
 
 document.getElementById("txtBusca").addEventListener("input", e => { estado.texto = e.target.value; pintar(); });
 
-/* imagens fixas da página (banner, minis, faixa) também caem no placeholder */
-document.querySelectorAll(".banner img, .mini img, .faixa img, .import img").forEach(i => {
-  const alvo = () => semFoto(i.alt || "Europartes", "");
-  i.onerror = () => { i.onerror = null; i.src = alvo(); };
-  if (i.complete && i.naturalWidth === 0) i.src = alvo();
-});
+/* imagens fixas da página (banner, minis, faixa) usam o mesmo mecanismo */
+document.querySelectorAll(".banner img, .mini img, .faixa img, .import img").forEach(protegerFoto);
 
 pintarFiltros(); pintar();
 </script>
